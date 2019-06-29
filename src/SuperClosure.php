@@ -27,7 +27,7 @@ class SuperClosure
 
     final public function __sleep()
     {
-        $serializer       = new Serializer();
+        $serializer = new Serializer();
         $this->serialized = $serializer->serialize($this->closure);
         unset($this->closure);
 
@@ -36,7 +36,7 @@ class SuperClosure
 
     final public function __wakeup()
     {
-        $serializer    = new Serializer();
+        $serializer = new Serializer();
         $this->closure = $serializer->unserialize($this->serialized);
     }
 

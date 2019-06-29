@@ -18,27 +18,17 @@ namespace swf;
  * Author: kong | <iwhero@yeah.com>
  */
 
+use Swoole\WebSocket\Server as WebSocketServer;
+use Swoole\Http\Server as HttpServer;
+
+use Yaf\Registry;
+
 class Http extends Server
 {
     protected $app;
-    protected $appPath;
-    protected $table;
-    protected $cachetable;
-    protected $server_type;
     protected $lastMtime;
-    protected $swoole;
     protected $config = [];
-    protected $fieldType = [
-        'int'    => Table::TYPE_INT,
-        'string' => Table::TYPE_STRING,
-        'float'  => Table::TYPE_FLOAT,
-    ];
-
-    protected $fieldSize = [
-        Table::TYPE_INT    => 4,
-        Table::TYPE_STRING => 32,
-        Table::TYPE_FLOAT  => 8,
-    ];
+    protected $yafApp;
 
     /**
      * 架构函数
@@ -57,6 +47,7 @@ class Http extends Server
     public function setConfig($config = [])
     {
         $this->config = array_merge($this->config,$config);
+        $this->option = array_merge($this->option,$this->config['swoole']);
         return $this;
     }
 
@@ -67,52 +58,27 @@ class Http extends Server
      */
     public function getSwoole()
     {
-//        $this->init();
-        return $this->config;;
+        $this->run();
+        return $this->swoole;
     }
-
-    /**
-     * @return HttpServer
-     */
-    private function init($host = '0.0.0.0', $port = 9501, $mode = SWOOLE_PROCESS, $sockType = SWOOLE_SOCK_TCP)
+    
+    private function run()
     {
-        $this->server_type = $this->config['server_type'];
-        $host = $this->config['host'] ?? $host;
-        $port = $this->config['port'] ?? $port;
-        $mode = $this->config['mode'] ?? $mode;
-        $sockType = $this->config['sockType'] ?? $sockType;
-        switch ($this->server_type) {
+        $host = $this->option['host'] ?? $this->host;
+        $port = $this->option['port'] ?? $this->port;
+        $mode = $this->option['mode'] ?? $this->mode;
+        $sockType = $this->option['sockType'] ?? $this->sockType;
+        switch ($this->option['server_type'] ?? '') {
             case 'websocket':
                 $this->swoole = new WebSocketServer($host, $port, $mode, $sockType);
                 break;
             default:
                 $this->swoole = new HttpServer($host, $port, $mode, $sockType);
         }
-        $this->option($this->config);
-    }
-    
-    private function table(array $option)
-    {
-        $size        = !empty($option['size']) ? $option['size'] : 1024;
-        $this->table = new Table($size);
-
-        foreach ($option['column'] as $field => $type) {
-            $length = null;
-
-            if (is_array($type)) {
-                list($type, $length) = $type;
-            }
-
-            if (isset($this->fieldType[$type])) {
-                $type = $this->fieldType[$type];
-            }
-
-            $this->table->column($field, $type, isset($length) ? $length : $this->fieldSize[$type]);
-        }
-        $this->table->create();
+        $this->setOption($this->option);
     }
 
-    private function option(array $option)
+    private function setOption($option = [])
     {
         // 设置参数
         if (!empty($option)) {
@@ -130,12 +96,19 @@ class Http extends Server
     }
 
     /**
+     * @param $server
+     */
+    public function onStart($server) {
+        @swoole_set_process_name("swf-server");
+    }
+
+    /**
      * 此事件在Worker进程/Task进程启动时发生,这里创建的对象可以在进程生命周期内使用
      *
      * @param $server
      * @param $worker_id
      */
-    private function onWorkerStart($server, $worker_id)
+    public function onWorkerStart($server, $worker_id)
     {
         // 应用实例化
         $this->app = new App();
@@ -147,43 +120,41 @@ class Http extends Server
         if (0 == $worker_id) {
             $this->timer($server);
         }
+
+        $this->yafApp = new \Yaf\Application($this->config);
+
+        ob_start();
+        $this->yafApp->bootstrap();
+        ob_end_clean();
+        // 注入 yaf app
+        $this->app->setApp($this->yafApp,$this->config);
+
+        // 注入 config 和 swoole服务
+        Registry::set('config', $this->config);
+        Registry::set('swoole', $server);
+
     }
 
     /**
-     * 自定义初始化Swoole
+     * peceive回调
      * @param $server
-     * @param $worker_id
+     * @param $fd
+     * @param $reactor_id
+     * @param $data
      */
-    private function initServer($server, $worker_id)
+    public function onReceive($server, $fd, $reactor_id, $data)
     {
-//        $wokerStart = Config::get('swoole.wokerstart');
-//        if ($wokerStart) {
-//            if (is_string($wokerStart) && class_exists($wokerStart)) {
-//                $obj = new $wokerStart($server, $worker_id);
-//                $obj->run();
-//                unset($obj);
-//            } elseif ($wokerStart instanceof \Closure) {
-//                $wokerStart($server, $worker_id);
-//            }
-//        }
+        // 执行应用并响应
+        $this->app->swooleReceive($server, $fd, $reactor_id, $data);
     }
 
-    /**
-     * 系统定时器
-     *
-     * @param $server
-     */
-    private function timer($server)
-    {
-
-    }
-
+    
     /**
      * request回调
      * @param $request
      * @param $response
      */
-    private function onRequest($request, $response)
+    public function onRequest($request, $response)
     {
         // 执行应用并响应
         $this->app->swooleRequest($request, $response);
@@ -194,7 +165,7 @@ class Http extends Server
      * @param $server
      * @param $frame
      */
-    private function onOpen($server, $request)
+    public function onOpen($server, $request)
     {
         // 执行应用并响应
         $this->app->swooleOpen($server, $request);
@@ -205,7 +176,7 @@ class Http extends Server
      * @param $server
      * @param $frame
      */
-    private function onMessage($server, $frame)
+    public function onMessage($server, $frame)
     {
         // 执行应用并响应
         $this->app->swooleWebSocket($server, $frame);
@@ -216,7 +187,7 @@ class Http extends Server
      * @param $server
      * @param $frame
      */
-    private function onClose($server, $fd)
+    public function onClose($server, $fd)
     {
         // 执行应用并响应
         $this->app->swooleClose($server, $fd);
@@ -230,7 +201,7 @@ class Http extends Server
      * @param $data
      * @return mixed|null
      */
-    private function onTask($serv, $task_id, $fromWorkerId, $data)
+    public function onTask($serv, $task_id, $fromWorkerId, $data)
     {
         if (is_string($data) && class_exists($data)) {
             $taskObj = new $data;
@@ -260,10 +231,40 @@ class Http extends Server
      * @param $task_id
      * @param $data
      */
-    private function onFinish($serv, $task_id, $data)
+    public function onFinish($serv, $task_id, $data)
     {
         if ($data instanceof SuperClosure) {
             $data($serv, $task_id, $data);
         }
     }
+
+    /**
+     * 自定义初始化Swoole
+     * @param $server
+     * @param $worker_id
+     */
+    private function initServer($server, $worker_id)
+    {
+        $wokerStart = $this->option['wokerstart'] ?? '';
+        if ($wokerStart) {
+            if (is_string($wokerStart) && class_exists($wokerStart)) {
+                $obj = new $wokerStart($server, $worker_id);
+                $obj->run();
+                unset($obj);
+            } elseif ($wokerStart instanceof \Closure) {
+                $wokerStart($server, $worker_id);
+            }
+        }
+    }
+
+    /**
+     * 系统定时器
+     *
+     * @param $server
+     */
+    private function timer($server)
+    {
+
+    }
+
 }
