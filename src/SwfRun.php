@@ -47,6 +47,7 @@ class SwfRun
                 echo 'No Swoole Server'.PHP_EOL;
                 break;
         }
+
     }
     
     private function start($action)

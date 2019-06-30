@@ -57,14 +57,17 @@ class App
         try {
             $this->yafApp->getDispatcher()->dispatch($yafRequest);
         } catch (\Yaf\Exception $e ) {
+            $yafRequest->setParam('error',$e);
             $yafRequest->setControllerName($this->config['http']['controllerName'] ?? 'error');
             $yafRequest->setActionName($this->config['http']['actionName'] ?? 'error');
             $this->yafApp->getDispatcher()->dispatch($yafRequest);
         } catch (\Exception $e) {
+            $yafRequest->setParam('error',$e);
             $yafRequest->setControllerName($this->config['http']['controllerName'] ?? 'error');
             $yafRequest->setActionName($this->config['http']['actionName'] ?? 'error');
             $this->yafApp->getDispatcher()->dispatch($yafRequest);
         } catch (\Throwable $e) {
+            $yafRequest->setParam('error',$e);
             $yafRequest->setControllerName($this->config['http']['controllerName'] ?? 'error');
             $yafRequest->setActionName($this->config['http']['actionName'] ?? 'error');
             $this->yafApp->getDispatcher()->dispatch($yafRequest);
@@ -105,16 +108,19 @@ class App
         try {
             $this->yafApp->getDispatcher()->dispatch($request);
         } catch (\Yaf\Exception $e) {
+            $request->setParam('error',$e);
             $request->setModuleName($this->config['websocket']['moduleName'] ?? 'error');
             $request->setControllerName($this->config['websocket']['controllerName'] ?? 'error');
             $request->setActionName($this->config['websocket']['actionName'] ?? 'error');
             $this->yafApp->getDispatcher()->dispatch($request);
         }  catch (\Exception $e) {
+            $request->setParam('error',$e);
             $request->setModuleName($this->config['websocket']['moduleName'] ?? 'error');
             $request->setControllerName($this->config['websocket']['controllerName'] ?? 'error');
             $request->setActionName($this->config['websocket']['actionName'] ?? 'error');
             $this->yafApp->getDispatcher()->dispatch($request);
         } catch (\Throwable $e) {
+            $request->setParam('error',$e);
             $request->setModuleName($this->config['websocket']['moduleName'] ?? 'error');
             $request->setControllerName($this->config['websocket']['controllerName'] ?? 'error');
             $request->setActionName($this->config['websocket']['actionName'] ?? 'error');
