@@ -17,6 +17,6 @@
         }
     },
     "bin": [
-        "bin/swf"
+        "bin/swf.php"
     ]
 }
