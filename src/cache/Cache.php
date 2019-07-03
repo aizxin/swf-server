@@ -15,7 +15,7 @@ namespace swf\cache;
 
 use swf\pool\PoolFactory;
 use Swoole\Coroutine;
-
+ 
 class Cache extends \think\Cache
 {
     public function __construct(array $config = [])
@@ -25,15 +25,25 @@ class Cache extends \think\Cache
     }
 
     /**
+     * @return Driver
+     */
+    public function handler()
+    {
+        return $this->handler;
+    }
+
+    /**
      * 自动初始化缓存
      * @access public
+     *
      * @param  array $options 配置数组
      * @param  bool  $force   强制更新
+     *
      * @return Driver
      */
     private function run($name = 'cache')
     {
-        $chche = (new PoolFactory())->getPool('cache',CachePool::class);
+        $chche = (new PoolFactory())->getPool('cache', CachePool::class);
         $connection = $chche->get();
         if (Coroutine::getCid()) {
             \Yaf\Registry::get('swoole')->defer(function () use ($chche, $connection) {

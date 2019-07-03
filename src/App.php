@@ -57,20 +57,11 @@ class App
         try {
             $this->yafApp->getDispatcher()->dispatch($yafRequest);
         } catch (\Yaf\Exception $e ) {
-            $yafRequest->setParam('error',$e);
-            $yafRequest->setControllerName($this->config['http']['controllerName'] ?? 'error');
-            $yafRequest->setActionName($this->config['http']['actionName'] ?? 'error');
-            $this->yafApp->getDispatcher()->dispatch($yafRequest);
+            $this->errorException($e);
         } catch (\Exception $e) {
-            $yafRequest->setParam('error',$e);
-            $yafRequest->setControllerName($this->config['http']['controllerName'] ?? 'error');
-            $yafRequest->setActionName($this->config['http']['actionName'] ?? 'error');
-            $this->yafApp->getDispatcher()->dispatch($yafRequest);
+            $this->errorException($e);
         } catch (\Throwable $e) {
-            $yafRequest->setParam('error',$e);
-            $yafRequest->setControllerName($this->config['http']['controllerName'] ?? 'error');
-            $yafRequest->setActionName($this->config['http']['actionName'] ?? 'error');
-            $this->yafApp->getDispatcher()->dispatch($yafRequest);
+            $this->errorException($e);
         }
         $result = ob_get_contents();
         ob_end_clean();
@@ -104,29 +95,16 @@ class App
             'fd' => $frame->fd,
             'data' => $data
         ]);
-        ob_start();
         try {
             $this->yafApp->getDispatcher()->dispatch($request);
         } catch (\Yaf\Exception $e) {
-            $request->setParam('error',$e);
-            $request->setModuleName($this->config['websocket']['moduleName'] ?? 'error');
-            $request->setControllerName($this->config['websocket']['controllerName'] ?? 'error');
-            $request->setActionName($this->config['websocket']['actionName'] ?? 'error');
-            $this->yafApp->getDispatcher()->dispatch($request);
+            $this->errorException($e);
         }  catch (\Exception $e) {
-            $request->setParam('error',$e);
-            $request->setModuleName($this->config['websocket']['moduleName'] ?? 'error');
-            $request->setControllerName($this->config['websocket']['controllerName'] ?? 'error');
-            $request->setActionName($this->config['websocket']['actionName'] ?? 'error');
-            $this->yafApp->getDispatcher()->dispatch($request);
+            $this->errorException($e);
         } catch (\Throwable $e) {
             $request->setParam('error',$e);
-            $request->setModuleName($this->config['websocket']['moduleName'] ?? 'error');
-            $request->setControllerName($this->config['websocket']['controllerName'] ?? 'error');
-            $request->setActionName($this->config['websocket']['actionName'] ?? 'error');
-            $this->yafApp->getDispatcher()->dispatch($request);
+            $this->errorException($e);
         }
-        ob_end_clean();
     }
 
     /**
@@ -141,16 +119,28 @@ class App
             'fd' => $fd,
             'server' => $server
         ]);
-        ob_start();
         try {
             $this->yafApp->getDispatcher()->dispatch($request);
         } catch (\Yaf\Exception $e) {
-            $this->yafApp->getDispatcher()->dispatch($request);
+            $this->errorException($e);
         }  catch (\Exception $e) {
-            $this->yafApp->getDispatcher()->dispatch($request);
+            $this->errorException($e);
         } catch (\Throwable $e) {
-            $this->yafApp->getDispatcher()->dispatch($request);
+            $this->errorException($e);
         }
-        ob_end_clean();
+    }
+
+    /**
+     * 错误 处理
+     * @param $e
+     *
+     * @author: kong | <iwhero@yeah.com>
+     * @date  : 2019-07-02 22:17
+     */
+    private function errorException($e)
+    {
+        $request = new Http('error/error', '/');
+        $request->setParam('error',$e);
+        $this->yafApp->getDispatcher()->dispatch($request);
     }
 }

@@ -15,7 +15,7 @@ namespace swf;
 
 use Swoole\Process;
 
-class SwfRun
+class Swf
 {
     protected $config;
     public function __construct($config)

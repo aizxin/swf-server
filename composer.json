@@ -10,7 +10,10 @@
     "require": {
         "php": ">=7.1.0",
         "jeremeamia/superclosure": "^2.4",
-        "xavier/xcron-expression": "^0.11.0"
+        "xavier/xcron-expression": "^0.11.0",
+        "topthink/think-orm": "^2.0",
+        "topthink/think-log": "^1.0",
+        "psr/log": "^1.1"
     },
     "autoload": {
         "psr-4": {
@@ -19,5 +22,10 @@
     },
     "bin": [
         "bin/swf.php"
-    ]
+    ],
+    "scripts": {
+        "post-autoload-dump": [
+            "@php copy_versioned_files.php"
+        ]
+    }
 }

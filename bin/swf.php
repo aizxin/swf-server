@@ -6,7 +6,7 @@ define('APP_PATH', realpath(getcwd()));
 
 require APP_PATH.'/vendor/autoload.php';
 
-use swf\SwfRun;
+use swf\Swf;
 use Yaf\Config\Ini;
 
 //错误信息将写入swoole日志中
@@ -19,4 +19,4 @@ date_default_timezone_set('Asia/Shanghai');
 $config = (new Ini(APP_PATH . "/conf/application.ini",ini_get('yaf.environ')))->toArray();
 
 
-(new SwfRun($config))->run($argv);
+(new Swf($config))->run($argv);

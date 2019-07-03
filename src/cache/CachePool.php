@@ -9,6 +9,7 @@
  * @author: kong | <iwhero@yeah.com>
  * @date  : 2019-06-30 13:06
  */
+
 namespace swf\cache;
 
 use swf\pool\AbstractPool;
@@ -16,10 +17,11 @@ use swf\pool\AbstractPool;
 class CachePool extends AbstractPool
 {
     private $config;
-    public function __construct($name = '',$container = '')
+
+    public function __construct($name = '', $container = '')
     {
         $this->config = \Yaconf::get($name);
-        parent::__construct($container,$this->config['pool']);
+        parent::__construct($container, $this->config['pool']);
     }
 
     /**

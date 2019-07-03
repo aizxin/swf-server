@@ -76,6 +76,7 @@ class Http extends Server
                 $this->swoole = new HttpServer($host, $port, $mode, $sockType);
         }
         $this->setOption($this->option);
+        $this->initYafApp($this->swoole);
     }
 
     private function setOption($option = [])
@@ -110,30 +111,14 @@ class Http extends Server
      */
     public function onWorkerStart($server, $worker_id)
     {
-        // 应用实例化
-        $this->app = new App();
-        $this->lastMtime = time();
-
         $this->initServer($server, $worker_id);
-
         //只在一个进程内执行定时任务
         if (0 == $worker_id) {
             $this->timer($server);
         }
-
-        $this->yafApp = new \Yaf\Application($this->config);
-
-        ob_start();
-        $this->yafApp->bootstrap();
-        ob_end_clean();
-        // 注入 yaf app
-        $this->app->setApp($this->yafApp,$this->config);
-
-        // 注入 config 和 swoole服务
-        Registry::set('config', $this->config);
-        Registry::set('swoole', $server);
-
+        $this->lastMtime = time();
     }
+
 
     /**
      * peceive回调
@@ -255,6 +240,23 @@ class Http extends Server
                 $wokerStart($server, $worker_id);
             }
         }
+    }
+
+    /**
+     * @author: kong | <iwhero@yeah.com>
+     * @date  : 2019-07-03 10:19
+     */
+    private function initYafApp($server)
+    {
+        // 注入 config 和 swoole服务
+        Registry::set('swoole', $server);
+        Registry::set('config', $this->config);
+        $this->yafApp = new \Yaf\Application($this->config);
+        $this->yafApp->bootstrap();
+        // 应用实例化
+        $this->app = new App();
+        // 注入 yaf app
+        $this->app->setApp($this->yafApp,$this->config);
     }
 
     /**
