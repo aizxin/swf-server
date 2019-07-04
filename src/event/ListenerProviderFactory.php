@@ -17,8 +17,11 @@ use swf\facade\Log;
 
 class ListenerProviderFactory
 {
-    public function registerConfig(ListenerProvider $provider, $container,$listenersConfig): void
+    public function registerConfig(ListenerProvider $provider, $container,$listenersConfig = []): void
     {
+        $listenersConfig = array_merge($listenersConfig,array_values(\Yaconf::get('listener')),ListenerManager::all());
+
+
         foreach ($listenersConfig as $listener) {
             $priority = 1;
             if (is_string($listener)) {

@@ -13,6 +13,7 @@
 namespace swf;
 
 
+use Swoole\Coroutine;
 use Swoole\Process;
 
 class Swf
@@ -30,6 +31,7 @@ class Swf
         if ($d){
             $this->config['swoole']['daemonize'] = true;
         }
+
         switch ($action) {
             case 'start':
                 $this->start($action);

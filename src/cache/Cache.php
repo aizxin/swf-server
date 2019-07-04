@@ -15,7 +15,8 @@ namespace swf\cache;
 
 use swf\pool\PoolFactory;
 use Swoole\Coroutine;
- 
+use think\Container;
+
 class Cache extends \think\Cache
 {
     public function __construct(array $config = [])
@@ -43,7 +44,7 @@ class Cache extends \think\Cache
      */
     private function run($name = 'cache')
     {
-        $chche = (new PoolFactory())->getPool('cache', CachePool::class);
+        $chche = $this->poolFactory()->getPool('cache', CachePool::class);
         $connection = $chche->get();
         if (Coroutine::getCid()) {
             \Yaf\Registry::get('swoole')->defer(function () use ($chche, $connection) {
@@ -51,5 +52,10 @@ class Cache extends \think\Cache
             });
         }
         return $connection;
+    }
+
+    private function poolFactory()
+    {
+        return Container::getInstance()->make(PoolFactory::class);
     }
 }

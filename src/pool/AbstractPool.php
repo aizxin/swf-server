@@ -13,6 +13,7 @@
 namespace swf\pool;
 
 
+use swf\facade\Log;
 use think\Container;
 
 abstract class AbstractPool implements PoolInterface
@@ -107,7 +108,6 @@ abstract class AbstractPool implements PoolInterface
             --$this->currentConnections;
             throw $throwable;
         }
-
         $connection = $this->channel->pop($this->option->getWaitTimeout());
         
         return $connection;

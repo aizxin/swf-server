@@ -13,6 +13,7 @@
 namespace swf;
 
 
+use SuperClosure\Serializer;
 use think\Container;
 
 class SuperClosure

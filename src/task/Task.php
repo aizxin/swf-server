@@ -12,6 +12,7 @@
 
 namespace swf\task;
 
+use swf\SuperClosure;
 use Yaf\Registry;
 
 class Task
@@ -29,11 +30,10 @@ class Task
             try {
                 $task = new SuperClosure($task);
             } catch (\Throwable $throwable) {
-                \Trigger::throwable($throwable);
                 return false;
             }
         }
 
-        return Registry::get('swoole')->task($task, $taskWorkerId);
+        return Registry::get('swoole')->task($task);
     }
 }

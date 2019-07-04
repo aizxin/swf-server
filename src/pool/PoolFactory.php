@@ -13,6 +13,7 @@
 namespace swf\pool;
 
 
+use swf\facade\Log;
 use think\Container;
 
 class PoolFactory

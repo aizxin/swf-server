@@ -14,6 +14,7 @@ namespace swf\process;
 
 
 use Swoole\Process as SwooleProcess;
+use Swoole\Server;
 
 abstract class AbstractProcess implements ProcessInterface
 {
@@ -62,11 +63,11 @@ abstract class AbstractProcess implements ProcessInterface
         return true;
     }
 
-    public function bind($server): void
+    public function bind(Server $server): void
     {
         $num = $this->nums;
         for ($i = 0; $i < $num; ++$i) {
-            $process = new SwooleProcess(function (SwooleProcess $process) use ($i) {
+            $process = new SwooleProcess(function (SwooleProcess $process){
                 $this->handle();
             }, $this->redirectStdinStdout, $this->pipeType, $this->enableCoroutine);
             $server->addProcess($process);

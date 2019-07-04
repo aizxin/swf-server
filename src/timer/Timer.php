@@ -75,13 +75,18 @@ class Timer
     {
         self::$timerlists = [];
         foreach ($this->config as $key => $val) {
+            if(!class_exists($val)) {
+                continue;
+            }
             try {
                 $cron = CronExpression::factory($key);
                 $time = $cron->getNextRunDate()->getTimestamp();
 
-                self::$timerlists[]['key']       = $key;
-                self::$timerlists[]['val']       = $val;
-                self::$timerlists[]['next_time'] = $time;
+                self::$timerlists[] = [
+                    'key'=>$key,
+                    'val'=>$val,
+                    'next_time'=>$time
+                ];
             } catch (\Exception $e) {
                 continue;
             }

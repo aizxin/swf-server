@@ -18,9 +18,19 @@ namespace swf;
  * Author: kong | <iwhero@yeah.com>
  */
 
+use swf\event\EventDispatcher;
+use swf\event\ListenerManager;
+use swf\event\ListenerProvider;
+use swf\event\ListenerProviderFactory;
+use swf\facade\Timer;
+use swf\process\event\ServerEvent;
+use swf\process\listeners\ProcessListeners;
+use Swoole\Runtime;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\Http\Server as HttpServer;
+use Swoole\Server as SwooleServer;
 
+use think\Container;
 use Yaf\Registry;
 
 class Http extends Server
@@ -77,6 +87,11 @@ class Http extends Server
         }
         $this->setOption($this->option);
         $this->initYafApp($this->swoole);
+
+        // 开启 协程
+        if ($this->option['enable_coroutine'] ?? false){
+            Runtime::enableCoroutine(true);
+        }
     }
 
     private function setOption($option = [])
@@ -186,25 +201,26 @@ class Http extends Server
      * @param $data
      * @return mixed|null
      */
-    public function onTask($serv, $task_id, $fromWorkerId, $data)
+    public function onTask(SwooleServer $serv, $task)
     {
+        $data = $task->data;
         if (is_string($data) && class_exists($data)) {
             $taskObj = new $data;
             if (method_exists($taskObj, 'run')) {
-                $taskObj->run($serv, $task_id, $fromWorkerId);
+                $taskObj->run($serv, $task->id, $task->worker_id);
                 unset($taskObj);
                 return true;
             }
         }
 
         if (is_object($data) && method_exists($data, 'run')) {
-            $data->run($serv, $task_id, $fromWorkerId);
+            $data->run($serv, $task->id, $task->worker_id);
             unset($data);
             return true;
         }
 
         if ($data instanceof SuperClosure) {
-            return $data($serv, $task_id, $data);
+            return $data($serv, $task->id, $data);
         } else {
             $serv->finish($data);
         }
@@ -216,7 +232,7 @@ class Http extends Server
      * @param $task_id
      * @param $data
      */
-    public function onFinish($serv, $task_id, $data)
+    public function onFinish(SwooleServer $serv, $task_id, $data)
     {
         if ($data instanceof SuperClosure) {
             $data($serv, $task_id, $data);
@@ -248,8 +264,8 @@ class Http extends Server
      */
     private function initYafApp($server)
     {
-        // 注入 config 和 swoole服务
         Registry::set('swoole', $server);
+        // 注入 config 和 swoole服务
         Registry::set('config', $this->config);
         $this->yafApp = new \Yaf\Application($this->config);
         $this->yafApp->bootstrap();
@@ -257,6 +273,8 @@ class Http extends Server
         $this->app = new App();
         // 注入 yaf app
         $this->app->setApp($this->yafApp,$this->config);
+        $this->eventListeners($server);
+
     }
 
     /**
@@ -266,7 +284,24 @@ class Http extends Server
      */
     private function timer($server)
     {
-
+        $timer    = $this->option['tiemr'] ?? false;
+        $interval = $this->option['interval'] ?? 500;
+        if ($timer) {
+            $interval = $interval > 0 ? $interval : 1000;
+            $server->tick($interval, function () use ($server) {
+                Timer::run($server);
+            });
+        }
     }
+    
+    private function eventListeners($server){
+        ListenerManager::register(ProcessListeners::class);
+        $container = Container::getInstance();
+        $provider = $container->make(ListenerProvider::class);
+        $container->make(ListenerProviderFactory::class)->registerConfig($provider,$container);
+        $container->make(EventDispatcher::class)->dispatch(new ServerEvent($server));
+    }
+
+
 
 }

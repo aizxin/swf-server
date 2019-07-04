@@ -105,6 +105,7 @@ abstract class Server
 
         // 启动服务
         $this->swoole->start();
+        
     }
 
     protected function init()

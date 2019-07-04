@@ -13,15 +13,17 @@
 namespace swf\model;
 
 
+use swf\facade\Log;
 use swf\pool\PoolFactory;
 use Swoole\Coroutine;
+use think\Container;
 
 class Db extends \think\Db
 {
     public function __construct(array $config = [])
     {
         parent::__construct($config);
-        $this->run();
+        $this->connection = $this->run();
     }
 
     /**
@@ -30,10 +32,10 @@ class Db extends \think\Db
      * @author: kong | <iwhero@yeah.com>
      * @date  : 2019-06-30 15:13
      */
-    private function run($config = [])
+    public function run($config = [])
     {
         $name = $config['type'] ?? 'mysql';
-        $mysql = (new PoolFactory())->getPool($name,DbPool::class,$config);
+        $mysql = $this->poolFactory()->getPool($name,DbPool::class,$config);
         $connection = $mysql->get();
         if (Coroutine::getCid()) {
             \Yaf\Registry::get('swoole')->defer(function () use ($mysql, $connection) {
@@ -44,9 +46,7 @@ class Db extends \think\Db
         $connection->clearQueryTimes();
         // 重置数据库执行次数
         // \think\facade\Db::$executeTimes = 0;
-        $this->connection = $connection->getConnection();
-
-        return $this->connection;
+        return $connection->getConnection();
     }
 
     /**
@@ -58,6 +58,16 @@ class Db extends \think\Db
     public function buildQuery($connection = [])
     {
         return $this->newQuery($this->run($connection));
+    }
+
+    /**
+     * @return object
+     * @author: kong | <iwhero@yeah.com>
+     * @date  : 2019-07-03 16:21
+     */
+    private function poolFactory()
+    {
+        return Container::getInstance()->make(PoolFactory::class);
     }
     
 }
