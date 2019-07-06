@@ -20,7 +20,7 @@ class ProcessManager
      */
     protected static $processes = [];
 
-    public static function register(ProcessInterface $process): void
+    public static function register($process): void
     {
         static::$processes[] = $process;
     }

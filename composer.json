@@ -9,6 +9,8 @@
     ],
     "require": {
         "php": ">=7.1.0",
+        "ext-json": "*",
+        "enqueue/amqp-lib": "^0.9.8",
         "jeremeamia/superclosure": "^2.4",
         "xavier/xcron-expression": "^0.11.0",
         "topthink/think-orm": "^2.0",

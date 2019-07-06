@@ -25,6 +25,8 @@ use swf\event\ListenerProviderFactory;
 use swf\facade\Timer;
 use swf\process\event\ServerEvent;
 use swf\process\listeners\ProcessListeners;
+use swf\process\ProcessManager;
+use swf\queue\process\QueueProcess;
 use Swoole\Runtime;
 use Swoole\WebSocket\Server as WebSocketServer;
 use Swoole\Http\Server as HttpServer;
@@ -296,6 +298,7 @@ class Http extends Server
     
     private function eventListeners($server){
         ListenerManager::register(ProcessListeners::class);
+        ProcessManager::register(QueueProcess::class);
         $container = Container::getInstance();
         $provider = $container->make(ListenerProvider::class);
         $container->make(ListenerProviderFactory::class)->registerConfig($provider,$container);
