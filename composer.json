@@ -13,9 +13,9 @@
         "enqueue/amqp-lib": "^0.9.8",
         "jeremeamia/superclosure": "^2.4",
         "xavier/xcron-expression": "^0.11.0",
-        "topthink/think-orm": "^2.0.5",
-        "jeremeamia/superclosure": "^2.4",
-        "topthink/think-log": "^2.0"
+        "topthink/think-orm": "^2.0.16",
+        "topthink/think-cache": "^2.0.6",
+        "topthink/think-log": "^2.0.1"
     },
     "autoload": {
         "psr-4": {
