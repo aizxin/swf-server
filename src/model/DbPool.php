@@ -17,7 +17,7 @@ class DbPool extends \swf\pool\AbstractPool
     private $config;
     public function __construct($name = '',$config = [])
     {
-        $this->config = \Yaconf::get($name);
+        $this->config = $config;
         parent::__construct($this->config['pool'] ?? []);
     }
 
@@ -28,7 +28,6 @@ class DbPool extends \swf\pool\AbstractPool
      */
     protected function createConnection()
     {
-        \think\facade\Db::setConfig($this->config);
-        return \think\facade\Db::connect($this->config);
+        return new DbConnection($this,$this->config);
     }
 }

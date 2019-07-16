@@ -1,27 +1,24 @@
 <?php
 /**
- * FileName: CachePool.php
+ * FileName: DbPool.php
  * ==============================================
  * Copy right 2016-2017
  * ----------------------------------------------
  * This is not a free software, without any authorization is not allowed to use and spread.
  * ==============================================
  * @author: kong | <iwhero@yeah.com>
- * @date  : 2019-06-30 13:06
+ * @date  : 2019-06-30 15:06
  */
 
 namespace swf\cache;
 
-use swf\pool\AbstractPool;
-
-class CachePool extends AbstractPool
+class CachePool extends \swf\pool\AbstractPool
 {
     private $config;
-
-    public function __construct($name = '', $container = '')
+    public function __construct($name = '',$config = [])
     {
-        $this->config = \Yaconf::get($name);
-        parent::__construct($container, $this->config['pool']);
+        $this->config = $config;
+        parent::__construct($this->config['pool'] ?? []);
     }
 
     /**
@@ -31,6 +28,6 @@ class CachePool extends AbstractPool
      */
     protected function createConnection()
     {
-        return \think\facade\Cache::init($this->config);
+        return new CacheConnection($this,$this->config);
     }
 }

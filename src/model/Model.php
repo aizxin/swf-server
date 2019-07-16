@@ -14,48 +14,16 @@ declare (strict_types = 1);
 
 namespace swf\model;
 
-use swf\facade\Db;
-use think\db\Query;
-
 class Model extends \think\Model{
 
     /**
-     * 获取当前模型的数据库查询对象
+     * 设置Db对象
      * @access public
-     * @param array|false $scope 使用的全局查询范围
-     * @return Query
+     * @param DbManager $db Db对象
+     * @return void
      */
-    public function db($scope = []): Query
+    public function setDb($db)
     {
-        /** @var Query $query */
-        if ($this->queryInstance) {
-            $query = $this->queryInstance;
-        } else {
-            $query = Db::buildQuery($this->connection)
-                ->name($this->name . $this->suffix)
-                ->pk($this->pk);
-        }
-
-        $query->model($this)
-            ->json($this->json, $this->jsonAssoc)
-            ->setFieldType(array_merge($this->schema, $this->jsonType));
-
-        if (!empty($this->table)) {
-            $query->table($this->table . $this->suffix);
-        }
-
-        // 软删除
-        if (property_exists($this, 'withTrashed') && !$this->withTrashed) {
-            $this->withNoTrashed($query);
-        }
-
-        // 全局作用域
-        if (is_array($scope)) {
-            $globalScope = array_diff($this->globalScope, $scope);
-            $query->scope($globalScope);
-        }
-
-        // 返回当前模型的数据库查询对象
-        return $query;
+        $this->db = $db;
     }
 }

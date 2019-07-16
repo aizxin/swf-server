@@ -15,22 +15,58 @@ namespace swf\cache;
 
 use swf\pool\PoolFactory;
 use Swoole\Coroutine;
+use think\cache\Driver;
+use think\CacheManager;
 use think\Container;
 
-class Cache extends \think\Cache
+class Cache extends CacheManager
 {
-    public function __construct(array $config = [])
+    /**
+     * 连接或者切换缓存
+     * @access public
+     * @param  string $name  连接配置名
+     * @param  bool   $force 强制重新连接
+     * @return Driver
+     */
+    public function store(string $name = '', bool $force = false): Driver
     {
-        parent::__construct($config);
-        $this->handler = $this->run();
+        if ('' == $name) {
+            $name = $this->config['default'] ?? 'file';
+        }
+
+        if ($force || !isset($this->instance[$name])) {
+            if (!isset($this->config['stores'][$name])) {
+                throw new InvalidArgumentException('Undefined cache config:' . $name);
+            }
+
+            $options = $this->config['stores'][$name];
+
+            $this->instance[$name] = $this->connect($options,$name);
+        }
+
+        return $this->instance[$name];
     }
 
     /**
+     * 连接缓存
+     * @access public
+     * @param  array  $options 连接参数
+     * @param  string $name  连接配置名
      * @return Driver
      */
-    public function handler()
+    public function connect(array $options, string $name = ''): Driver
     {
-        return $this->handler;
+        if ($name && isset($this->instance[$name])) {
+            return $this->instance[$name];
+        }
+
+        $handler = $this->getConnectionPool($name,$options);
+
+        if ($name) {
+            $this->instance[$name] = $handler;
+        }
+
+        return $handler;
     }
 
     /**
@@ -42,10 +78,10 @@ class Cache extends \think\Cache
      *
      * @return Driver
      */
-    private function run($name = 'cache')
+    private function getConnectionPool($name,$config)
     {
-        $chche = $this->poolFactory()->getPool('cache', CachePool::class);
-        $connection = $chche->get();
+        $chche = $this->poolFactory()->getPool($name,CachePool::class,$config);
+        $connection = $chche->get()->getConnection();
         if (Coroutine::getCid()) {
             \Yaf\Registry::get('swoole')->defer(function () use ($chche, $connection) {
                 $chche->release($connection);
