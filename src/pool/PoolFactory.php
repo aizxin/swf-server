@@ -23,7 +23,7 @@ class PoolFactory
      */
     protected static $pools = [];
 
-    public static function getPool(string $name, $pool, $config = [])
+    public static function getPool(string $name, AbstractPool $pool, $config = [])
     {
 
         if (isset(static::$pools[ $name ])) {
@@ -33,8 +33,6 @@ class PoolFactory
         $pool = new $pool($name, $config);
         static::$pools[ $name ] = $pool;
 
-        
-        
         return $pool;
     }
 }

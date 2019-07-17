@@ -60,8 +60,9 @@ abstract class AbstractPool
         $num = $this->getConnectionsInChannel();
 
         if ($num > 0) {
-            while ($conn = $this->channel->pop($this->option->getWaitTimeout())) {
+            while ($this->currentConnections > $this->option->getMinConnections() && $conn = $this->channel->pop($this->option->getWaitTimeout())) {
                 $conn->close();
+                --$this->currentConnections;
             }
         }
     }
