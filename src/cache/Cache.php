@@ -13,6 +13,7 @@
 namespace swf\cache;
 
 
+use swf\pool\Context;
 use swf\pool\PoolFactory;
 use Swoole\Coroutine;
 use think\cache\Driver;
@@ -78,15 +79,36 @@ class Cache extends CacheManager
      */
     private function getConnectionPool($name, $config)
     {
-        $chche = PoolFactory::getPool($name, CachePool::class, $config)->get();
-        $connection = $chche->getConnection();
-        if (Coroutine::getCid()) {
-            \Yaf\Registry::get('swoole')->defer(function () use ($chche) {
-                $chche->release($chche);
+        $pool = null;
+
+        $id = $this->getContextKey($name);
+
+        if (Context::has($id)) {
+            $pool = Context::get($id);
+        }
+
+        if ( ! $pool instanceof CachePool) {
+            $pool = PoolFactory::getPool($id, CachePool::class, $config);
+            Context::set($id, $pool);
+        }
+
+        $connection = $pool->get()->getConnection();
+        if (Context::inCoroutine()) {
+            \Yaf\Registry::get('swoole')->defer(function () use ($pool,$connection) {
+                $pool->release($connection);
             });
         }
 
+
         return $connection;
+    }
+
+    /**
+     * The key to identify the connection object in coroutine context.
+     */
+    private function getContextKey($name): string
+    {
+        return sprintf('redis.connection.%s', $name);
     }
 
 }

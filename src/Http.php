@@ -268,7 +268,6 @@ class Http extends Server
     {
         Registry::set('swoole', $server);
         // 注入 config 和 swoole服务
-        Registry::set('config', $this->config);
         $this->yafApp = new \Yaf\Application($this->config);
         $this->yafApp->bootstrap();
         // 应用实例化

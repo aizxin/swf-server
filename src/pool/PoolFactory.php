@@ -27,14 +27,14 @@ class PoolFactory
     {
 
         if (isset(static::$pools[ $name ])) {
+
             return static::$pools[ $name ];
+        } else {
+            $pool = new $pool($name, $config);
+
+            return static::$pools[ $name ] = $pool;;
         }
 
-        $pool = new $pool($name, $config);
-        static::$pools[ $name ] = $pool;
 
-        
-        
-        return $pool;
     }
 }

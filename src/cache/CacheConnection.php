@@ -59,6 +59,7 @@ class CacheConnection extends Connection
 
     public function close(): bool
     {
+        unset($this->connection);
         return true;
     }
 }

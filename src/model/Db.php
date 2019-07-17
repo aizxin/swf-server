@@ -15,6 +15,7 @@ namespace swf\model;
 
 use swf\facade\Log;
 use swf\pool\Channel;
+use swf\pool\Context;
 use swf\pool\PoolFactory;
 use Swoole\Coroutine;
 use think\Container;
@@ -80,28 +81,6 @@ class Db extends DbManager
         });
     }
 
-    /**
-     * @param string $name
-     *
-     * @author: kong | <iwhero@yeah.com>
-     * @date  : 2019-06-30 15:13
-     */
-    protected function getConnectionPool($name, $config)
-    {
-        $mysql = PoolFactory::getPool($name, DbPool::class, $config)->get();
-        $connection = $mysql->getConnection();
-        if (Coroutine::getCid()) {
-            \Yaf\Registry::get('swoole')->defer(function () use ($mysql) {
-                $mysql->release($mysql);
-            });
-        }
-        // 重置数据库查询次数
-        $this->clearQueryTimes();
-
-        // 重置数据库执行次数
-        return $connection;
-    }
-
 
     /**
      * 创建数据库连接实例
@@ -131,6 +110,53 @@ class Db extends DbManager
         }
 
         return $this->getConnectionPool($name, $config);
+    }
+
+    /**
+     * 自动初始化缓存
+     * @access public
+     *
+     * @param  array $options 配置数组
+     * @param  bool  $force   强制更新
+     *
+     * @return Driver
+     */
+    /**
+     * @param string $name
+     *
+     * @author: kong | <iwhero@yeah.com>
+     * @date  : 2019-06-30 15:13
+     */
+    protected function getConnectionPool($name, $config)
+    {
+        $connection = null;
+        $id = $this->getContextKey($name);
+
+        if (Context::has($id)) {
+            $connection = Context::get($id);
+        }
+
+        if ( ! $connection instanceof DbConnection) {
+            $connection = PoolFactory::getPool($id, DbPool::class, $config)->get();
+            Context::set($id, $connection);
+            if (Context::inCoroutine()) {
+                \Yaf\Registry::get('swoole')->defer(function () use ($connection) {
+                    $connection->release();
+                });
+            }
+        }
+        // 重置数据库查询次数
+        $this->clearQueryTimes();
+
+        return $connection->getConnection();
+    }
+
+    /**
+     * The key to identify the connection object in coroutine context.
+     */
+    private function getContextKey($name): string
+    {
+        return sprintf('database.connection.%s', $name);
     }
 
 }
