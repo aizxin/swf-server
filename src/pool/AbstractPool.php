@@ -16,7 +16,7 @@ namespace swf\pool;
 use swf\facade\Log;
 use think\Container;
 
-abstract class AbstractPool implements PoolInterface
+abstract class AbstractPool
 {
     /**
      * @var Channel
@@ -26,7 +26,7 @@ abstract class AbstractPool implements PoolInterface
     /**
      * @var ContainerInterface
      */
-    protected $container;
+    protected $name;
 
     /**
      * @var PoolOptionInterface
@@ -38,12 +38,11 @@ abstract class AbstractPool implements PoolInterface
      */
     protected $currentConnections = 0;
 
-    public function __construct($config = [],$container = '')
+    public function __construct($config = [],$name = '')
     {
-        $this->container = $container;
+        $this->name = $name;
         $this->initOption($config);
-
-        $this->channel = Container::getInstance()->make(Channel::class, ['size' => $this->option->getMaxConnections()]);
+        $this->channel = new Channel($this->option->getMaxConnections());
     }
 
     public function get()
@@ -84,14 +83,7 @@ abstract class AbstractPool implements PoolInterface
 
     protected function initOption($options = []): void
     {
-        $this->option = Container::getInstance()->make(PoolOption::class, [
-            'minConnections' => $options['min_connections'] ?? 1,
-            'maxConnections' => $options['max_connections'] ?? 10,
-            'connectTimeout' => $options['connect_timeout'] ?? 10.0,
-            'waitTimeout' => $options['wait_timeout'] ?? 3.0,
-            'heartbeat' => $options['heartbeat'] ?? -1,
-            'maxIdleTime' => $options['max_idle_time'] ?? 60.0,
-        ]);
+        $this->option = new PoolOption($options);
     }
 
     abstract protected function createConnection();
@@ -109,7 +101,9 @@ abstract class AbstractPool implements PoolInterface
             throw $throwable;
         }
         $connection = $this->channel->pop($this->option->getWaitTimeout());
-        
+
         return $connection;
     }
+
+    
 }

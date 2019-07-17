@@ -35,8 +35,10 @@ class Db extends DbManager
     /**
      * 获取配置参数
      * @access public
-     * @param  string $config 配置参数
+     *
+     * @param  string $config  配置参数
      * @param  mixed  $default 默认值
+     *
      * @return mixed
      */
     public function getConfig(string $name = '', $default = null)
@@ -45,7 +47,7 @@ class Db extends DbManager
             return $this->config;
         }
 
-        return $this->config[$name] ?? $default;
+        return $this->config[ $name ] ?? $default;
     }
 
     /**
@@ -84,18 +86,18 @@ class Db extends DbManager
      * @author: kong | <iwhero@yeah.com>
      * @date  : 2019-06-30 15:13
      */
-    protected function getConnectionPool($name,$config)
+    protected function getConnectionPool($name, $config)
     {
-        $mysql = $this->poolFactory()->getPool($name,DbPool::class,$config);
-        $connection = $mysql->get()->getConnection();
+        $mysql = PoolFactory::getPool($name, DbPool::class, $config)->get();
+        $connection = $mysql->getConnection();
         if (Coroutine::getCid()) {
-            \Yaf\Registry::get('swoole')->defer(function () use ($mysql, $connection) {
-                $mysql->release($connection);
+            \Yaf\Registry::get('swoole')->defer(function () use ($mysql) {
+                $mysql->release($mysql);
             });
         }
-//        var_dump($connection);
         // 重置数据库查询次数
         $this->clearQueryTimes();
+
         // 重置数据库执行次数
         return $connection;
     }
@@ -104,40 +106,31 @@ class Db extends DbManager
     /**
      * 创建数据库连接实例
      * @access protected
+     *
      * @param string|null $name  连接标识
      * @param bool        $force 强制重新连接
+     *
      * @return Connection
      */
-    protected function instance($name = null,$force = false): Connection
+    protected function instance($name = null, $force = false): Connection
     {
         if (empty($name)) {
             $name = $this->getConfig('default', 'mysql');
         }
 
-        if ($force || !isset($this->instance[$name])) {
-            $connections = $this->getConfig('connections');
-            if (!isset($connections[$name])) {
+        $connections = $this->getConfig('connections');
+
+        $config = $connections[ $name ];
+
+        if ($force) {
+            if ( ! isset($connections[ $name ])) {
                 throw new InvalidArgumentException('Undefined db config:' . $name);
             }
 
-            $config = $connections[$name];
-
-            $this->instance[$name] = $this->getConnectionPool($name,$config);
+            return $this->getConnectionPool($name, $config);
         }
 
-        return $this->instance[$name];
+        return $this->getConnectionPool($name, $config);
     }
 
-
-
-    /**
-     * @return object
-     * @author: kong | <iwhero@yeah.com>
-     * @date  : 2019-07-03 16:21
-     */
-    private function poolFactory()
-    {
-        return Container::getInstance()->make(PoolFactory::class);
-    }
-    
 }

@@ -18,7 +18,7 @@ class DbPool extends \swf\pool\AbstractPool
     public function __construct($name = '',$config = [])
     {
         $this->config = $config;
-        parent::__construct($this->config['pool'] ?? []);
+        parent::__construct($this->config['pool'] ?? [],$name);
     }
 
     /**

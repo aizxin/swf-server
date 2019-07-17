@@ -62,4 +62,26 @@ class Channel
     {
         return \Swoole\Coroutine::getCid();
     }
+
+    /**
+     * @return CoChannel
+     */
+    public function stats()
+    {
+        if ($this->isCoroutine()) {
+            return $this->channel->stats();
+        }
+        return $this->queue;
+    }
+
+    /**
+     * @return CoChannel
+     */
+    public function getChannel()
+    {
+        if ($this->isCoroutine()) {
+            return $this->channel;
+        }
+        return $this->queue;
+    }
 }

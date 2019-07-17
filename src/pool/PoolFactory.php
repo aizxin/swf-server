@@ -19,72 +19,22 @@ use think\Container;
 class PoolFactory
 {
     /**
-     * @var ContainerInterface
-     */
-    protected $container;
-
-    /**
      * @var Pool[]
      */
-    protected $pools = [];
+    protected static $pools = [];
 
-    /**
-     * @var array
-     */
-    protected $configs;
-
-    public function __construct($container = '')
+    public static function getPool(string $name, $pool, $config = [])
     {
-        $this->container = \think\Container::getInstance();
-    }
 
-    public function addConfig(Config $config)
-    {
-        $this->configs[$config->getName()] = $config;
-        return $this;
-    }
-
-    public function getPool(string $name,$pool,$config = [])
-    {
-        $name = $config['name'] ?? $name;
-
-        if (isset($this->pools[$name])) {
-            return $this->pools[$name];
+        if (isset(static::$pools[ $name ])) {
+            return static::$pools[ $name ];
         }
 
-        if ($this->container instanceof Container) {
-            $pool = $this->container->make($pool, ['name' => $name,'config'=>$config]);
-        }
-        return $this->pools[$name] = $pool;
-    }
+        $pool = new $pool($name, $config);
+        static::$pools[ $name ] = $pool;
 
-
-    public function get(string $name, callable $callback, array $option = []): Pool
-    {
-        if (! $this->hasConfig($name)) {
-            $config = new Config($name, $callback, $option);
-            $this->addConfig($config);
-        }
-
-        $config = $this->getConfig($name);
-
-        if (! isset($this->pools[$name])) {
-            $this->pools[$name] = $this->container->make(Pool::class, [
-                'callback' => $config->getCallback(),
-                'option' => $config->getOption(),
-            ]);
-        }
-
-        return $this->pools[$name];
-    }
-
-    protected function hasConfig(string $name): bool
-    {
-        return isset($this->configs[$name]);
-    }
-
-    protected function getConfig(string $name): Config
-    {
-        return $this->configs[$name];
+        
+        
+        return $pool;
     }
 }

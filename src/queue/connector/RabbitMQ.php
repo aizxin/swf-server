@@ -21,7 +21,7 @@ use Interop\Amqp\AmqpMessage;
 use Interop\Amqp\AmqpQueue;
 use Interop\Amqp\AmqpTopic;
 use Interop\Amqp\Impl\AmqpBind;
-use swf\facade\Log;
+use think\facade\Log;
 use swf\queue\Connector;
 use swf\queue\job\RabbitMQ as RabbitMQJob;
 

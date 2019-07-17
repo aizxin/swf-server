@@ -24,8 +24,10 @@ class Cache extends CacheManager
     /**
      * 连接或者切换缓存
      * @access public
+     *
      * @param  string $name  连接配置名
      * @param  bool   $force 强制重新连接
+     *
      * @return Driver
      */
     public function store(string $name = '', bool $force = false): Driver
@@ -34,37 +36,33 @@ class Cache extends CacheManager
             $name = $this->config['default'] ?? 'file';
         }
 
-        if ($force || !isset($this->instance[$name])) {
-            if (!isset($this->config['stores'][$name])) {
+        if ($force) {
+            if ( ! isset($this->config['stores'][ $name ])) {
                 throw new InvalidArgumentException('Undefined cache config:' . $name);
             }
 
-            $options = $this->config['stores'][$name];
+            $options = $this->config['stores'][ $name ];
 
-            $this->instance[$name] = $this->connect($options,$name);
+            return $this->connect($options, $name);
         }
 
-        return $this->instance[$name];
+        $options = $this->config['stores'][ $name ];
+
+        return $this->connect($options, $name);
     }
 
     /**
      * 连接缓存
      * @access public
+     *
      * @param  array  $options 连接参数
-     * @param  string $name  连接配置名
+     * @param  string $name    连接配置名
+     *
      * @return Driver
      */
     public function connect(array $options, string $name = ''): Driver
     {
-        if ($name && isset($this->instance[$name])) {
-            return $this->instance[$name];
-        }
-
-        $handler = $this->getConnectionPool($name,$options);
-
-        if ($name) {
-            $this->instance[$name] = $handler;
-        }
+        $handler = $this->getConnectionPool($name, $options);
 
         return $handler;
     }
@@ -78,20 +76,17 @@ class Cache extends CacheManager
      *
      * @return Driver
      */
-    private function getConnectionPool($name,$config)
+    private function getConnectionPool($name, $config)
     {
-        $chche = $this->poolFactory()->getPool($name,CachePool::class,$config);
-        $connection = $chche->get()->getConnection();
+        $chche = PoolFactory::getPool($name, CachePool::class, $config)->get();
+        $connection = $chche->getConnection();
         if (Coroutine::getCid()) {
-            \Yaf\Registry::get('swoole')->defer(function () use ($chche, $connection) {
-                $chche->release($connection);
+            \Yaf\Registry::get('swoole')->defer(function () use ($chche) {
+                $chche->release($chche);
             });
         }
+
         return $connection;
     }
 
-    private function poolFactory()
-    {
-        return Container::getInstance()->make(PoolFactory::class);
-    }
 }

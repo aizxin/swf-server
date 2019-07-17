@@ -13,7 +13,7 @@
 namespace swf\pool;
 
 
-class PoolOption implements PoolOptionInterface
+class PoolOption
 {
     /**
      * Min connections of pool.
@@ -63,14 +63,14 @@ class PoolOption implements PoolOptionInterface
      */
     private $maxIdleTime = 60.0;
 
-    public function __construct(int $minConnections, int $maxConnections, float $connectTimeout, float $waitTimeout, float $heartbeat, float $maxIdleTime)
+    public function __construct($options)
     {
-        $this->minConnections = $minConnections;
-        $this->maxConnections = $maxConnections;
-        $this->connectTimeout = $connectTimeout;
-        $this->waitTimeout = $waitTimeout;
-        $this->heartbeat = $heartbeat;
-        $this->maxIdleTime = $maxIdleTime;
+        $this->minConnections = $options['min_connections'] ?? 1;
+        $this->maxConnections = $options['max_connections'] ?? 10;
+        $this->connectTimeout = $options['connect_timeout'] ?? 10.0;
+        $this->waitTimeout = $options['wait_timeout'] ?? 3.0;
+        $this->heartbeat = $options['heartbeat'] ?? -1;
+        $this->maxIdleTime = $options['max_idle_time'] ?? 60.0;
     }
 
     public function getMaxConnections(): int
