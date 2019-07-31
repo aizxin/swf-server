@@ -23,24 +23,28 @@ class ProcessListeners implements ListenerInterface
     public function listen(): array
     {
         return [
-            ServerEvent::class
+            ServerEvent::class,
         ];
     }
 
     public function process(object $event)
     {
-        if ($event instanceof ServerEvent){
+        if ($event instanceof ServerEvent) {
             $server = $event->server;
-            $processes = \Yaconf::get('process');
+            if (class_exists('Yaconf')) {
+                $processes = \Yaconf::get('process');
+            } else {
+                $processes = (new \Yaf\Config\Ini(APP_PATH . "/conf/process.ini"))->toArray();
+            }
             $processes = array_merge(array_values($processes ?? []), ProcessManager::all());
-            
+
             foreach ($processes as $process) {
                 if (is_string($process)) {
                     $instance = Container::getInstance()->make($process);
                 } else {
                     $instance = $process;
                 }
-                if (method_exists($instance,'bind') && $instance->isEnable()){
+                if (method_exists($instance, 'bind') && $instance->isEnable()) {
                     $instance->bind($server);
                 }
             }

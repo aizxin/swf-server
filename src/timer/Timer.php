@@ -21,16 +21,19 @@ use XCron\CronExpression;
  * 可以执行回调函数，同时可以执行定时器模板
  * @package xavier\swoole
  */
-
 class Timer
 {
     private static $timerlists = [];
-    private $config            = [];
+    private $config = [];
 
     public function __construct()
     {
         //获取配置信息
-        $this->config = \Yaconf::get('timer');
+        if (class_exists('Yaconf')) {
+            $this->config = \Yaconf::get('timer');
+        } else {
+            $this->config = (new \Yaf\Config\Ini(APP_PATH . "/conf/timer.ini"))->toArray();
+        }
 
         if (empty($this->config)) {
             $this->config = [];
@@ -39,6 +42,7 @@ class Timer
 
     /**
      * 开始执行定时器任务
+     *
      * @param $serv 服务对象
      */
     public function run($serv)
@@ -75,7 +79,7 @@ class Timer
     {
         self::$timerlists = [];
         foreach ($this->config as $key => $val) {
-            if(!class_exists($val)) {
+            if ( ! class_exists($val)) {
                 continue;
             }
             try {
@@ -83,9 +87,9 @@ class Timer
                 $time = $cron->getNextRunDate()->getTimestamp();
 
                 self::$timerlists[] = [
-                    'key'=>$key,
-                    'val'=>$val,
-                    'next_time'=>$time
+                    'key'       => $key,
+                    'val'       => $val,
+                    'next_time' => $time,
                 ];
             } catch (\Exception $e) {
                 continue;
@@ -95,6 +99,7 @@ class Timer
 
     /**
      * 异步投递任务到task worker
+     *
      * @param string $class
      */
     public function syncTask($class)
@@ -110,8 +115,10 @@ class Timer
 
     /**
      * 每隔固定时间执行一次
-     * @param int       $time       间隔时间
-     * @param mixed     $callback   可以是回调 可以是定时器任务模板
+     *
+     * @param int   $time     间隔时间
+     * @param mixed $callback 可以是回调 可以是定时器任务模板
+     *
      * @return bool
      */
     public function tick($time, $callback)
@@ -129,8 +136,10 @@ class Timer
 
     /**
      * 延迟执行
-     * @param int       $time       间隔时间
-     * @param mixed     $callback   可以是回调 可以是定时器任务模板
+     *
+     * @param int   $time     间隔时间
+     * @param mixed $callback 可以是回调 可以是定时器任务模板
+     *
      * @return bool
      */
     public function after($time, $callback)
@@ -149,7 +158,9 @@ class Timer
 
     /**
      * 清除定时器
+     *
      * @param int $timerId
+     *
      * @return bool
      */
     public function clear($timerId)

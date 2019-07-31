@@ -19,7 +19,14 @@ class ListenerProviderFactory
 {
     public function registerConfig(ListenerProvider $provider, $container,$listenersConfig = []): void
     {
-        $listenersConfig = array_merge($listenersConfig,array_values(\Yaconf::get('listener')),ListenerManager::all());
+
+        if (class_exists('Yaconf')){
+            $listener = \Yaconf::get('listener');
+        } else {
+            $listener = (new \Yaf\Config\Ini(APP_PATH . "/conf/listener.ini"))->toArray();
+        }
+
+        $listenersConfig = array_merge($listenersConfig,array_values($listener),ListenerManager::all());
 
 
         foreach ($listenersConfig as $listener) {

@@ -32,13 +32,19 @@ class Queue
 
     private static function buildConnector()
     {
-        $options = \Yaconf::get('queue');
-        $class    = !empty($options['connector']) ? $options['connector'] : Redis::class;
+        if (class_exists('Yaconf')) {
+            $options = \Yaconf::get('queue');
+        } else {
+            $options = (new \Yaf\Config\Ini(APP_PATH . "/conf/queue.ini"))->toArray();
+        }
 
-        if (!isset(self::$connector)) {
-            
+        $class = ! empty($options['connector']) ? $options['connector'] : Redis::class;
+
+        if ( ! isset(self::$connector)) {
+
             self::$connector = new $class($options);
         }
+
         return self::$connector;
     }
 
@@ -51,12 +57,12 @@ class Queue
     {
         $key = $value;
 
-        if (isset(static::$studlyCache[$key])) {
-            return static::$studlyCache[$key];
+        if (isset(static::$studlyCache[ $key ])) {
+            return static::$studlyCache[ $key ];
         }
 
         $value = ucwords(str_replace(['-', '_'], ' ', $value));
 
-        return static::$studlyCache[$key] = str_replace(' ', '', $value);
+        return static::$studlyCache[ $key ] = str_replace(' ', '', $value);
     }
 }
